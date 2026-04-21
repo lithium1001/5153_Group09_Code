@@ -1,6 +1,4 @@
-# BT5153 Group 09 — Mobile Review Analysis System
-
-An AI-powered system for analyzing Amazon mobile phone reviews using a multi-agent LangGraph pipeline with hybrid retrieval, aspect-level sentiment analysis, episodic memory, and an evaluator-optimizer quality loop.
+# BT5153 Group 09
 
 ---
 
@@ -9,10 +7,10 @@ An AI-powered system for analyzing Amazon mobile phone reviews using a multi-age
 ### Step 1 — Upload the ZIP
 
 1. Open [Google Colab](https://colab.research.google.com/) and create a new notebook (or open `BT5153_MAS.ipynb` directly).
-2. In the left sidebar, click the **Files** icon, then **Upload to session storage**.
-3. Upload `Amazon_Unlocked_Mobile.zip` — the notebook extracts it automatically on first run. Do **not** unzip it manually.
+2. Before running, go to Runtime → Change runtime type and set Hardware accelerator to **GPU**. Cell H precomputes embeddings for 105K reviews — on CPU this takes 20–30 minutes; on GPU it finishes in 2–3 minutes.
+3. In the left sidebar, click the **Files** icon, then **Upload to session storage**.
+4. Upload `Amazon_Unlocked_Mobile.zip` — the notebook extracts it automatically on first run. Do **not** unzip it manually.
 
-> Alternatively, mount Google Drive and place the ZIP there, then update the `DATA_PATH` variable in Cell B to point to its Drive location.
 
 ### Step 2 — Set the OpenAI API Key via Google Secret
 
@@ -30,7 +28,7 @@ os.environ["OPENAI_API_KEY"] = userdata.get("OPENAI_API_KEY")
 
 ### Step 3 — Run All Cells in Order
 
-Click **Runtime → Run all** (or `Ctrl+F9`). The cells must run top-to-bottom:
+Click **Runtime → Run all**. The cells must run top-to-bottom:
 
 | Cell | What happens |
 |------|-------------|
@@ -45,7 +43,7 @@ Click **Runtime → Run all** (or `Ctrl+F9`). The cells must run top-to-bottom:
 | P | Runs unit tests |
 | Q | Launches the **Gradio web interface** — a public URL will appear in the output |
 
-> **First-run time**: Cell D (brand normalization) can take 5–15 minutes. Subsequent runs are fast because results are cached in `brand_mapping.pkl`. Cell H (embedding precomputation over 105K reviews) takes a few minutes on Colab's free GPU/CPU.
+> **First-run time**: Cell D (brand normalization) can take 5–15 minutes. Subsequent runs are fast because results are cached in `brand_mapping.pkl`. Cell H (embedding precomputation over 105K reviews) takes a few minutes on Colab's GPU.
 
 ---
 
@@ -62,26 +60,6 @@ Results include a comparison table, per-aspect sentiment breakdown, 4 interactiv
 
 Click **Clear Session** to reset the in-memory cache and start a fresh conversation.
 
----
-
-## Architecture Overview
-
-The pipeline is a LangGraph state machine with 8 agents:
-
-```
-Coordinator → Cache Inject → [Search] → Analysis → Reflection → [retry loop] → Visualization
-```
-
-- **Coordinator**: Parses query intent (`compare / analyze / search / off_topic`), extracts brand names and aspects, injects episodic memory and conversation history.
-- **Search (ReAct)**: Hybrid 3-stage retrieval — BM25 + dense bi-encoder embeddings (`all-MiniLM-L6-v2`) fused with RRF, then cross-encoder re-ranking (`ms-marco-MiniLM-L-6-v2`). Returns top-30 reviews per brand.
-- **Analysis**: Async per-brand LLM calls using chain-of-thought prompting for aspect-level sentiment. Outputs polarity, confidence, and per-aspect summaries.
-- **Reflection (Evaluator-Optimizer)**: Scores result quality (coverage, diversity, confidence). If score < 7/10, feeds per-brand critiques back into Analysis for up to 2 retry passes at higher temperature.
-- **Visualization**: Generates 4 Plotly charts (sentiment distribution, aspect heatmap, diverging bar, brand scatter).
-
-### Session Caching
-
-- **In-RAM**: Fetched reviews and sentiment outputs are cached for the session, so follow-up queries on the same brands skip re-fetching and re-analysis.
-- **On-disk**: `episodic_memory.json` persists the last 20 query resolutions across sessions for few-shot context. `brand_mapping.pkl` caches LLM brand normalizations.
 
 ---
 
@@ -103,12 +81,6 @@ Key parameters in Cell B (`CONFIG` dict):
 
 ## Requirements
 
-All dependencies are installed automatically in Cell A. No `requirements.txt` is needed. The only external requirement is a valid **OpenAI API key** with access to `gpt-4o-mini`.
+The only external requirement is a valid **OpenAI API key** with access to `gpt-4o-mini`.
 
-Hugging Face models (`all-MiniLM-L6-v2`, `ms-marco-MiniLM-L-6-v2`) are downloaded automatically from the Hub on first run.
 
----
-
-## Dataset
-
-`Amazon_Unlocked_Mobile.zip` contains `Amazon_Unlocked_Mobile.csv` — 413,840 unlocked mobile phone reviews from Amazon. The preprocessing pipeline (Cell D) filters this to ~105,160 high-quality reviews across 277 normalized brands.
