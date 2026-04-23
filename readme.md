@@ -9,7 +9,7 @@
 1. Open [Google Colab](https://colab.research.google.com/) and create a new notebook (or open `BT5153_MAS.ipynb` directly).
 2. Before running, go to Runtime → Change runtime type and set Hardware accelerator to **GPU**. Cell H precomputes embeddings for 105K reviews — on CPU this takes 20–30 minutes; on GPU it finishes in 2–3 minutes.
 3. In the left sidebar, click the **Files** icon, then **Upload to session storage**.
-4. Upload `Amazon_Unlocked_Mobile.zip` — the notebook extracts it automatically on first run. Do **not** unzip it manually.
+4. Upload `data09.zip` — the notebook extracts it automatically on first run. Do **not** unzip it manually.
 
 
 ### Step 2 — Set the OpenAI API Key via Google Secret
